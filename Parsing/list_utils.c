@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   list_utils.c                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: yonadry <yonadry@student.42.fr>            +#+  +:+       +#+        */
+/*   By: moudrib <moudrib@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/24 16:45:14 by moudrib           #+#    #+#             */
-/*   Updated: 2023/05/01 18:53:52 by yonadry          ###   ########.fr       */
+/*   Updated: 2023/05/02 19:33:57 by moudrib          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,7 @@ t_list	*ft_lstnew(char *content)
 		return (NULL);
 	head->content = content;
 	head->link = NULL;
+	head->prev = NULL;
 	return (head);
 }
 
@@ -30,7 +31,7 @@ t_list	*ft_lstlast(t_list *head)
 		return (NULL);
 	while (head)
 	{
-		if (head -> link == NULL)
+		if (head->link == NULL)
 			return (head);
 		head = head->link;
 	}
@@ -41,12 +42,13 @@ void	ft_lstadd_back(t_list **head, t_list *new)
 {
 	t_list	*tmp;
 
-	if (!(*head))
+	if (!*head || !head)
 		*head = new;
 	else
 	{
 		tmp = ft_lstlast(*head);
 		tmp->link = new;
+		new->prev = tmp;
 	}
 }
 

@@ -5,14 +5,14 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: yonadry <yonadry@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/05/01 18:11:44 by yonadry           #+#    #+#             */
-/*   Updated: 2023/05/01 19:05:48 by yonadry          ###   ########.fr       */
+/*   Created: 2023/05/04 20:32:32 by yonadry           #+#    #+#             */
+/*   Updated: 2023/05/05 17:36:19 by yonadry          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../minishell.h"
 
-int is_space(int c)
+int	is_space(int c)
 {
 	if ((c >= 9 && c <= 13) || c == 32)
 		return (1);
@@ -47,70 +47,96 @@ int	ft_count_arguments(char *input)
 	return (var.count);
 }
 
-void	ft_split_input(char *input)
+char is_quote(char c)
 {
-	int		i;
-	char	**arr;
-	t_list *lst;
+	if (c == '\'' || c == '\"')
+		return c;
+	return 0;
+}
+void switch_space(char *input, int x)
+{
+	t_vars v;
 
-	i = 0;
-	arr = ft_split(input, " 	");
-	lst = NULL;
-	while (arr[i])
+	v.i = -1;
+	while (input[++v.i] && x)
 	{
-		if (ft_strchr(arr[i], '\"') || ft_strchr(arr[i], '\''))
+		if (input[v.i] == '\"')
 		{
-			ft_lstadd_back(&lst, ft_lstnew(arr[i]));
-			while (!ft_strchr(arr[++i], '\"') || arr[i][0] != '\'')
-				lst->content = ft_strjoin(lst->content, arr[i]);
+			while (input[++v.i] && input[v.i] != '\"')
+				if (is_space(input[v.i]))
+					input[v.i] *= -1;
 		}
-		else
-		ft_lstadd_back(&lst, ft_lstnew(arr[i++]));
 	}
-	
-
-
-
-
-
-
-
-
-
-
-
-
-	while (lst)
+	while (input[++v.i] && !x)
 	{
-		printf("|%s|\n", lst->content);
-		lst = lst->link;
+		if (input[v.i] < 0)
+			input[v.i] *= -1;
 	}
-	
-
 }
 
-// char	*ft_strjoin_c(char *s1, char c)
-// {
-// 	char	*str;
-// 	int		i;
-// 	int		j;
+void ft_split_input(char *input)
+{
+	t_list *lst = NULL;
+	t_vars v;
+	int start;
+	int end;
 
-// 	i = 0;
-// 	j = 0;
-// 	if (!s1)
-// 		s1 = ft_strdup("");
-// 	if (!c)
-// 		return (NULL);
-// 	str = malloc((ft_strlen(s1) + 2) * sizeof(char));
-// 	if (!str)
-// 		return (NULL);
-// 	while (s1[i])
-// 	{
-// 		str[i] = s1[i];
-// 		i++;
-// 	}
-// 	str[i] = c;
-// 	str[++i] = '\0';
-// 	// free(s1);
-// 	return (str);
-// }
+	v.i = 0;
+	v.j = 0;
+	switch_space(input, 1);
+	v.arr = ft_split(input, " \t");
+	while (v.arr[v.i])
+	{
+		if (v.arr[v.i] && (ft_strchr(v.arr[v.i], '\"') || v.arr[v.i][0] == '\"'))
+		{
+			v.j = 0;
+			while (v.arr[v.i][v.j])
+			{
+				if (v.arr[v.i][v.j] && v.arr[v.i][v.j] == '\"')
+				{
+					start = v.j;
+					v.j++;
+					while (v.arr[v.i][v.j] != '\"')
+						v.j++;
+					end = v.j - start;
+					ft_lstadd_back(&lst, ft_lstnew(ft_substr(v.arr[v.i], start, end+1)));
+					// if(v.arr[v.i+1])
+					// 	ft_lstadd_back(&lst, ft_lstnew(" "));
+					v.j++;
+				}
+				else if (v.arr[v.i][v.j])
+				{
+					start = v.j;
+					while (v.arr[v.i][v.j] && v.arr[v.i][v.j] != '\"')
+						v.j++;
+					end = v.j - start;
+					ft_lstadd_back(&lst, ft_lstnew(ft_substr(v.arr[v.i], start, end)));
+					// v.j++;
+				}
+				// else if(!v.arr[v.i][v.j])
+				// 	ft_lstadd_back(&lst, ft_lstnew(" "));
+			}
+			v.i++;
+		}
+		else if (v.arr[v.i])
+		{
+			ft_lstadd_back(&lst, ft_lstnew(v.arr[v.i]));
+			// if (v.arr[v.i+1])
+			// 	ft_lstadd_back(&lst, ft_lstnew(" "));
+			v.i++;
+		}
+		if (v.arr[v.i])
+			ft_lstadd_back(&lst, ft_lstnew(" "));
+	}
+	t_list *tmp = lst;
+	while (lst)
+	{
+		switch_space(lst->content, 0);
+		lst = lst->link;
+	}
+	while (tmp)
+	{
+		printf("|%s|\n", tmp->content);
+		tmp = tmp->link;
+	}
+}

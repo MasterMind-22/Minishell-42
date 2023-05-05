@@ -3,25 +3,14 @@
 /*                                                        :::      ::::::::   */
 /*   libft_utils2.c                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: moudrib <moudrib@student.42.fr>            +#+  +:+       +#+        */
+/*   By: yonadry <yonadry@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/24 20:01:56 by moudrib           #+#    #+#             */
-/*   Updated: 2023/04/30 20:01:14 by moudrib          ###   ########.fr       */
+/*   Updated: 2023/05/05 13:16:34 by yonadry          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../minishell.h"
-
-void	syntax_error(char *s2, char e)
-{
-	ft_putstr_fd("minishell: syntax error near unexpected token ", 2);
-	if (s2)
-		ft_putstr_fd(s2, 2);
-	if (e)
-		ft_putchar(e, 2);
-	ft_putchar('\n', 2);
-	return ;
-}
 
 int	ft_strcmp(const char *s1, const char *s2)
 {

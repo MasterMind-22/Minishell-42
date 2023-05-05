@@ -6,7 +6,7 @@
 /*   By: yonadry <yonadry@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/23 13:31:57 by moudrib           #+#    #+#             */
-/*   Updated: 2023/05/01 18:15:43 by yonadry          ###   ########.fr       */
+/*   Updated: 2023/05/05 17:40:46 by yonadry          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,9 +41,7 @@ char	*ft_create_updated_input(char *input)
 		return (NULL);
 	while (input[++i])
 	{
-		if (input[i] == ' ')
-			new_input[j++] = ' ';
-		else if (input[i] == '|')
+		if (check_char("|><", input[i]))
 		{
 			new_input[j++] = ' ';
 			new_input[j++] = input[i];
@@ -62,21 +60,27 @@ void	ft_fill_list(char *input, t_list **list)
 	char	**arr;
 
 	i = -1;
-	arr = ft_split(input, " ");
+	arr = ft_split(input, "<");
 	while (arr[++i])
 		ft_lstadd_back(list, ft_lstnew(ft_strdup(arr[i])));
 	ft_free_arr(arr);
 }
 
-int	main(int ac, char **av)
+void	ft_builtins(char *input, char **env)
+{
+	env_parsing(input, ft_split_environment(env));
+}
+
+int	main(int ac, char **av, char **env)
 {
 	char	*input;
 	// t_list	*list;
-	// t_list	*tmp;
+	(void) env;
 
 	(void)av;
 	if (ac != 1)
 		return (0);
+	// print_env(ft_split_environment(env));
 	while (1)
 	{
 		input = readline("➜  Minishell ");
@@ -85,21 +89,10 @@ int	main(int ac, char **av)
 		if (ft_strlen(input))
 			add_history(input);
 		if (ft_strlen(input) && ft_first_last_check(input))
-		{
 			input = ft_create_updated_input(input);
-			ft_split_input(input);
-			// printf("%d\n", ft_count_arguments(input));
-			// ft_fill_list(input, &list);
-			// tmp = list;
-			// while (tmp)
-			// {
-			// 	printf("%s\n", tmp->content);
-			// 	tmp = tmp->link;
-			// }
-			// ft_destroy_list(&list);
-		}
-		// free(input);
+		// ft_builtins(input, env);
+		ft_split_input(input);
 	}
-	// system("leaks minishell");
+	system("leaks minishell");
 	return (0);
 }
