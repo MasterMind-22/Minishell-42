@@ -6,7 +6,7 @@
 /*   By: yonadry <yonadry@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/23 13:31:57 by moudrib           #+#    #+#             */
-/*   Updated: 2023/05/05 17:40:46 by yonadry          ###   ########.fr       */
+/*   Updated: 2023/05/06 18:44:45 by yonadry          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -88,8 +88,8 @@ int	main(int ac, char **av, char **env)
 			break ;
 		if (ft_strlen(input))
 			add_history(input);
-		if (ft_strlen(input) && ft_first_last_check(input))
-			input = ft_create_updated_input(input);
+		// if (ft_strlen(input) && ft_first_last_check(input))
+		// 	input = ft_create_updated_input(input);
 		// ft_builtins(input, env);
 		ft_split_input(input);
 	}
