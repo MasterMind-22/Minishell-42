@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   input.c                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: yonadry <yonadry@student.42.fr>            +#+  +:+       +#+        */
+/*   By: moudrib <moudrib@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/04 20:32:32 by yonadry           #+#    #+#             */
-/*   Updated: 2023/05/09 19:47:22 by yonadry          ###   ########.fr       */
+/*   Updated: 2023/05/11 15:23:11 by moudrib          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,7 +55,7 @@ char	is_quote(char input)
 
 char	is_special(char c)
 {
-	if (check_char("()=+|><;", c))
+	if (check_char("()=+|><$", c))
 		return (c);
 	return (0);
 }
@@ -147,8 +147,10 @@ t_list	*ft_split_input(char *input)
 		split_input(&lst, &v);
 		v.i++;
 		if (v.arr[v.i])
-			ft_lstadd_back(&lst, ft_lstnew(" "));
+			ft_lstadd_back(&lst, ft_lstnew(ft_strdup(" ")));
 	}
+	if (v.arr)
+		ft_free_arr(v.arr);
 	tmp = lst;
 	while (tmp)
 	{
