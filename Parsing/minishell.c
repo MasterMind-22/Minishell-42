@@ -6,7 +6,7 @@
 /*   By: yonadry <yonadry@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/23 13:31:57 by moudrib           #+#    #+#             */
-/*   Updated: 2023/05/11 21:40:31 by yonadry          ###   ########.fr       */
+/*   Updated: 2023/05/12 13:44:32 by yonadry          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,17 +40,38 @@ t_env	*ft_builtins(char *input, char **env/*, t_list *list*/)
 	return (envr);
 }
 
+void index_list(t_list **list)
+{
+	t_list *tmp;
+	int		count;
+
+	tmp = *list;
+	count = 1;
+	while (tmp)
+	{
+		tmp->pos = count;
+		count++;
+		tmp = tmp->link;
+	}
+}
+
 void expand_var(t_list **list, t_env *envr)
 {
 	t_list *tmp = *list;
 	t_env *tmp1 = envr;
 	t_vars v;
 	v.i = 0;
-	v.count = 0;
+	index_list(&tmp);
 	while (tmp)
 	{
-		v.count++;
-		if (tmp->content[0] == '$' && tmp->link)
+		if (tmp->content[0] == '$' && ((tmp->link && is_space(tmp->link->content[0]))
+				|| !tmp->link))
+		{
+			delete_node(list, tmp->pos);
+			delete_node(list, tmp->prev->pos);
+			delete_node(list, tmp->pos);
+		}
+		else if (tmp->content[0] == '$' && tmp->link)
 		{
 			tmp = tmp->link;
 			while (ft_isalpha(tmp->content[v.i]) ||
@@ -64,11 +85,12 @@ void expand_var(t_list **list, t_env *envr)
 				{
 					tmp->prev->content = ft_strdup(tmp1->value);
 					tmp->prev->content = ft_strjoin(tmp->prev->content ,ft_strdup(&tmp->content[v.i]));
-					delete_node(list, v.count+1);
+					delete_node(list, tmp->pos);
 				}
 				tmp1 = tmp1->link;
 			}
 		}
+				
 		tmp = tmp->link;
 	}
 }
