@@ -6,7 +6,7 @@
 /*   By: yonadry <yonadry@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/23 13:31:57 by moudrib           #+#    #+#             */
-/*   Updated: 2023/05/12 13:44:32 by yonadry          ###   ########.fr       */
+/*   Updated: 2023/05/19 20:48:19 by yonadry          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,83 +29,151 @@ void	ft(t_list *stack)
 	printf("---------------------------------------\x1B[0m\n\n");
 }
 
-t_env	*ft_builtins(char *input, char **env/*, t_list *list*/)
+t_env	*ft_builtins(char *input, t_env **env)
 {
-	t_env	*envr;
-
-	envr = ft_split_environment(env);
-	env_parsing(input, envr);
-	// export_parsing(input);
-
-	return (envr);
+	env_parsing(input, *env);
+	return (*env);
 }
 
-void index_list(t_list **list)
+t_list *skip_n_echo(t_list **tmp, int *flag)
+{
+	while (*tmp)
+	{
+		if (*tmp && !ft_strcmp((*tmp)->content, "-n"))
+		{
+			*flag = 1;
+			if (*tmp && (*tmp)->link && (*tmp)->link->link)
+				*tmp = (*tmp)->link->link;
+			else
+				return ((*tmp)->link);
+		}
+		else if (*tmp && ft_strnstr((*tmp)->content, "-n", 2)
+		&& ft_count_char(&(*tmp)->content[2], 'n') == ft_strlen(&(*tmp)->content[2]))
+		{
+			*flag = 1;
+			if (*tmp && (*tmp)->link && (*tmp)->link->link)
+				*tmp = (*tmp)->link->link;
+			else
+				return ((*tmp)->link);
+		}
+		else
+			return (*tmp);
+	}
+	return (*tmp);
+}
+
+void echo(t_list *list)
 {
 	t_list *tmp;
-	int		count;
+	int flag;
 
-	tmp = *list;
-	count = 1;
-	while (tmp)
+	tmp = list;
+	flag = 0;
+	if (tmp && tmp->link && !ft_strcmp(tmp->content, "echo"))
 	{
-		tmp->pos = count;
-		count++;
-		tmp = tmp->link;
+		tmp = tmp->link->link;
+		tmp = skip_n_echo(&tmp, &flag);
+		while (tmp)
+		{
+			if (strstr("PIPE,HEREDOC,APPEND,OUTPUT,INPUT", tmp->type))
+				break;
+			if (tmp)
+				printf("%s", tmp->content);
+			tmp = tmp->link;
+		}
+	}
+	if (!flag && list && !ft_strcmp(list->content, "echo"))
+		printf("\n");
+}
+
+char *strlower(char *str)
+{
+	int i;
+
+	i = 0;
+	while (str[i])
+	{
+		if (str[i] >= 'A' && str[i] <= 'Z')
+			str[i] += 32;
+		i++;
+	}
+	return (str);	
+}
+
+void pwd(t_list *list)
+{
+	char *pwd;
+
+	if (list && !strcmp("pwd", strlower(list->content)))
+	{
+		pwd = getcwd(NULL, 0);
+		if (pwd)
+			printf("%s\n", pwd);
 	}
 }
 
-void expand_var(t_list **list, t_env *envr)
+void change_dir(t_list *list, t_env **envr)
 {
-	t_list *tmp = *list;
-	t_env *tmp1 = envr;
-	t_vars v;
-	v.i = 0;
-	index_list(&tmp);
-	while (tmp)
+	char *pwd;
+	t_env *env = *envr;
+
+	if (list && !ft_strcmp(list->content, "cd"))
 	{
-		if (tmp->content[0] == '$' && ((tmp->link && is_space(tmp->link->content[0]))
-				|| !tmp->link))
+		if (list && (!list->link || 
+			(list->link->link && (!ft_strcmp(list->link->link->content, "~")))))
+			list->content = ft_strdup(getenv("HOME"));
+		else if (list && !ft_strcmp(list->link->link->content, "-"))
 		{
-			delete_node(list, tmp->pos);
-			delete_node(list, tmp->prev->pos);
-			delete_node(list, tmp->pos);
-		}
-		else if (tmp->content[0] == '$' && tmp->link)
-		{
-			tmp = tmp->link;
-			while (ft_isalpha(tmp->content[v.i]) ||
-				check_char("0123456789", tmp->content[v.i]))
-				v.i++;
-			v.str = ft_substr(tmp->content, 0, v.i);
-			tmp1 = envr;
-			while (tmp1)
+			while (env)
 			{
-				if (!ft_strcmp(tmp1->key, v.str))
-				{
-					tmp->prev->content = ft_strdup(tmp1->value);
-					tmp->prev->content = ft_strjoin(tmp->prev->content ,ft_strdup(&tmp->content[v.i]));
-					delete_node(list, tmp->pos);
-				}
-				tmp1 = tmp1->link;
+				if (!ft_strcmp(env->key, "OLDPWD"))
+					list->content = ft_strdup(env->value);
+				env = env->link;
 			}
 		}
-				
-		tmp = tmp->link;
+		else if (list && list->link && list->link->link)
+			list = list->link->link;
+		pwd = getcwd(NULL, 0);
+		if (list && !chdir(list->content))
+		{
+			env = *envr;
+			while (env)
+			{
+				if (!ft_strcmp(env->key, "PWD"))
+					env->value = ft_strdup(getcwd(NULL, 0));
+				if (!ft_strcmp(env->key, "OLDPWD"))
+					env->value = ft_strdup(pwd);
+				env = env->link;
+			}
+		}
+		else
+		{
+			printf("minishel: cd: %s: No such file or directory\n", list->content);
+			return ;
+		}
 	}
 }
 
-t_list	*minihell(char *input)
+void	minihell(char *input, t_env **envr, t_list **lst)
 {
-	t_list	*lst;
-
-	lst = ft_split_input(input);
-	if (check_syntax(lst))
-		return (0);
-	lexer(&lst);
-	if (ft_strlen(input) && (export_parsing(input) || check_before_value(&lst)))
-		return (0);
-	return (lst);
+	if (check_syntax(*lst))
+		return ;
+	lexer(lst);
+	*envr = ft_builtins(input, envr);
+	if (lst)
+	{
+		// lexer(&lst);
+		expand_var(lst, *envr);
+		echo(*lst);
+		change_dir(*lst, envr);
+		pwd(*lst);
+		// ft(*lst);
+		// ft_destroy_list(&lst);
+	}
+	if (ft_lstsize(*lst) == 1 && !ft_strcmp((*lst)->content, "export"))
+		print_export(*envr);
+	if (ft_strlen(input) && (export_parsing(input) || check_before_value(lst, envr)))
+		return ;
 }
 
 
@@ -116,9 +184,10 @@ int	main(int ac, char **av, char **env)
 	t_list	*lst;
 
 	(void)av;
-	(void)env;
 	if (ac != 1)
 		return (0);
+	envr = NULL;
+	envr = ft_split_environment(env);
 	while (1)
 	{
 		input = readline("➜  Minishell ");
@@ -126,17 +195,9 @@ int	main(int ac, char **av, char **env)
 			break ;
 		if (ft_strlen(input))
 			add_history(input);
-		lst = minihell(input);
-		if (lst)
-		{
-			// remove_unnecessary_nodes(&lst);
-			envr = ft_builtins(input, env);
-			expand_var(&lst, envr);
-			lexer(&lst);
-			ft(lst);
-			ft_destroy_list(&lst);
-		}
-		ft_destroy_list_env(&envr);
+		lst = ft_split_input(input);
+		minihell(input, &envr, &lst);
+		// ft_destroy_list_env(&envr);
 		free(input);
 	}
 	return (0);

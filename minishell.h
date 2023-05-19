@@ -6,7 +6,7 @@
 /*   By: yonadry <yonadry@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/23 13:25:55 by moudrib           #+#    #+#             */
-/*   Updated: 2023/05/12 12:22:49 by yonadry          ###   ########.fr       */
+/*   Updated: 2023/05/19 18:26:07 by yonadry          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,6 +53,8 @@ typedef struct t_vars
 /********************************* Libft utils ********************************/
 
 int			ft_isalpha(int ch);
+int			is_space(int c);
+int			is_space(int c);
 char		**ft_free_arr(char **str);
 size_t		ft_strlen(const char *str);
 char		*ft_strdup(const char *s1);
@@ -65,7 +67,8 @@ char		*ft_strjoin(char *s1, char *s2);
 char		**ft_split(char const *s, char *c);
 int			ft_strcmp(const char *s1, const char *s2);
 char		*ft_substr(char const *s, unsigned int start, size_t len);
-int			is_space(int c);
+char		*ft_strtrim(char *s1, char *set);
+char		*ft_strnstr(const char *str, const char *to_find, size_t len);
 /********************************* List utils *********************************/
 
 t_list		*ft_lstnew(char *content);
@@ -87,8 +90,10 @@ int			check_syntax(t_list *lst);
 int			export_parsing(char *input);
 void		lexer(t_list **list);
 void		delete_node(t_list **list, int position);
-int			check_before_value(t_list **list);
-
+int			check_before_value(t_list **list, t_env **env);
+void		print_export(t_env *env);
+void		expand_var(t_list **list, t_env *envr);
+size_t			ft_count_char(char *input, char c);
 // int			ft_count_arguments(char *input);
 // int			ft_first_last_check(char *input);
 // void		ft_fill_list(char *input, t_list **list);
