@@ -6,7 +6,7 @@
 /*   By: yonadry <yonadry@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/24 15:52:52 by moudrib           #+#    #+#             */
-/*   Updated: 2023/05/19 18:26:17 by yonadry          ###   ########.fr       */
+/*   Updated: 2023/05/20 16:35:44 by yonadry          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,6 +43,8 @@ size_t	ft_count_char(char *input, char c)
 
 int	check_syntax(t_list *lst)
 {
+	if (lst->content[0] == '|')
+		return (syntax_error(NULL, '|'), 1);
 	while (lst)
 	{
 		if ((ft_lstsize(lst) == 1 && check_char("><|", lst->content[0]))

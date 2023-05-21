@@ -6,7 +6,7 @@
 /*   By: yonadry <yonadry@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/23 13:31:57 by moudrib           #+#    #+#             */
-/*   Updated: 2023/05/19 20:48:19 by yonadry          ###   ########.fr       */
+/*   Updated: 2023/05/21 13:23:54 by yonadry          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,125 +35,25 @@ t_env	*ft_builtins(char *input, t_env **env)
 	return (*env);
 }
 
-t_list *skip_n_echo(t_list **tmp, int *flag)
+t_env	*ft_copy_env_list(t_env *env)
 {
-	while (*tmp)
+	t_env	*copy;
+
+	copy = NULL;
+	while (env)
 	{
-		if (*tmp && !ft_strcmp((*tmp)->content, "-n"))
-		{
-			*flag = 1;
-			if (*tmp && (*tmp)->link && (*tmp)->link->link)
-				*tmp = (*tmp)->link->link;
-			else
-				return ((*tmp)->link);
-		}
-		else if (*tmp && ft_strnstr((*tmp)->content, "-n", 2)
-		&& ft_count_char(&(*tmp)->content[2], 'n') == ft_strlen(&(*tmp)->content[2]))
-		{
-			*flag = 1;
-			if (*tmp && (*tmp)->link && (*tmp)->link->link)
-				*tmp = (*tmp)->link->link;
-			else
-				return ((*tmp)->link);
-		}
+		if (env->value)
+			ft_lstadd_back_env(&copy,
+				ft_lstnew_env(ft_strdup(env->key), ft_strdup(env->value)));
 		else
-			return (*tmp);
+			ft_lstadd_back_env(&copy, ft_lstnew_env(ft_strdup(env->key), NULL));
+		env = env->link;
 	}
-	return (*tmp);
+	return (copy);
 }
 
-void echo(t_list *list)
-{
-	t_list *tmp;
-	int flag;
-
-	tmp = list;
-	flag = 0;
-	if (tmp && tmp->link && !ft_strcmp(tmp->content, "echo"))
-	{
-		tmp = tmp->link->link;
-		tmp = skip_n_echo(&tmp, &flag);
-		while (tmp)
-		{
-			if (strstr("PIPE,HEREDOC,APPEND,OUTPUT,INPUT", tmp->type))
-				break;
-			if (tmp)
-				printf("%s", tmp->content);
-			tmp = tmp->link;
-		}
-	}
-	if (!flag && list && !ft_strcmp(list->content, "echo"))
-		printf("\n");
-}
-
-char *strlower(char *str)
-{
-	int i;
-
-	i = 0;
-	while (str[i])
-	{
-		if (str[i] >= 'A' && str[i] <= 'Z')
-			str[i] += 32;
-		i++;
-	}
-	return (str);	
-}
-
-void pwd(t_list *list)
-{
-	char *pwd;
-
-	if (list && !strcmp("pwd", strlower(list->content)))
-	{
-		pwd = getcwd(NULL, 0);
-		if (pwd)
-			printf("%s\n", pwd);
-	}
-}
-
-void change_dir(t_list *list, t_env **envr)
-{
-	char *pwd;
-	t_env *env = *envr;
-
-	if (list && !ft_strcmp(list->content, "cd"))
-	{
-		if (list && (!list->link || 
-			(list->link->link && (!ft_strcmp(list->link->link->content, "~")))))
-			list->content = ft_strdup(getenv("HOME"));
-		else if (list && !ft_strcmp(list->link->link->content, "-"))
-		{
-			while (env)
-			{
-				if (!ft_strcmp(env->key, "OLDPWD"))
-					list->content = ft_strdup(env->value);
-				env = env->link;
-			}
-		}
-		else if (list && list->link && list->link->link)
-			list = list->link->link;
-		pwd = getcwd(NULL, 0);
-		if (list && !chdir(list->content))
-		{
-			env = *envr;
-			while (env)
-			{
-				if (!ft_strcmp(env->key, "PWD"))
-					env->value = ft_strdup(getcwd(NULL, 0));
-				if (!ft_strcmp(env->key, "OLDPWD"))
-					env->value = ft_strdup(pwd);
-				env = env->link;
-			}
-		}
-		else
-		{
-			printf("minishel: cd: %s: No such file or directory\n", list->content);
-			return ;
-		}
-	}
-}
-
+/*if (ft_strlen(input) && (export_parsing(input)
+	|| check_before_value(lst, envr)))*/
 void	minihell(char *input, t_env **envr, t_list **lst)
 {
 	if (check_syntax(*lst))
@@ -162,20 +62,11 @@ void	minihell(char *input, t_env **envr, t_list **lst)
 	*envr = ft_builtins(input, envr);
 	if (lst)
 	{
-		// lexer(&lst);
 		expand_var(lst, *envr);
-		echo(*lst);
-		change_dir(*lst, envr);
-		pwd(*lst);
+		chech_cmd(lst, envr, input);
 		// ft(*lst);
-		// ft_destroy_list(&lst);
 	}
-	if (ft_lstsize(*lst) == 1 && !ft_strcmp((*lst)->content, "export"))
-		print_export(*envr);
-	if (ft_strlen(input) && (export_parsing(input) || check_before_value(lst, envr)))
-		return ;
 }
-
 
 int	main(int ac, char **av, char **env)
 {
@@ -194,11 +85,13 @@ int	main(int ac, char **av, char **env)
 		if (!input)
 			break ;
 		if (ft_strlen(input))
+		{
 			add_history(input);
-		lst = ft_split_input(input);
-		minihell(input, &envr, &lst);
-		// ft_destroy_list_env(&envr);
-		free(input);
+			lst = ft_split_input(input);
+			if (lst)
+				minihell(input, &envr, &lst);
+		}
 	}
+	free(input);
 	return (0);
 }
