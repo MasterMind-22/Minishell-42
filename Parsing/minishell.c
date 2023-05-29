@@ -6,7 +6,7 @@
 /*   By: yonadry <yonadry@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/23 13:31:57 by moudrib           #+#    #+#             */
-/*   Updated: 2023/05/29 12:47:28 by yonadry          ###   ########.fr       */
+/*   Updated: 2023/05/29 18:27:41 by yonadry          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -80,6 +80,29 @@ t_env	*ft_copy_env_list(t_env *env)
 	return (copy);
 }
 
+void	recreate_list(t_command *final_list, char *input, t_env **envr)
+{
+	t_vars	v;
+
+	v.str = NULL;
+	while (final_list)
+	{
+		v.i = 0;
+		while (final_list->cmd[v.i])
+		{
+			v.str = ft_strjoin(v.str, final_list->cmd[v.i]);
+			v.str = ft_strjoin(v.str, " ");
+			v.i++;
+		}
+		v.tmp1 = ft_split_input(v.str);
+		lexer(&v.tmp1);
+		check_cmd(&v.tmp1, envr, input, 0);
+		free(v.str);
+		v.str = NULL;
+		final_list = final_list->link;
+	}
+}
+
 void	minihell(char *input, t_env **envr, t_list **lst)
 {
 	t_command	*final_list;
@@ -92,10 +115,11 @@ void	minihell(char *input, t_env **envr, t_list **lst)
 	if (lst)
 	{
 		expand_var(lst, *envr);
-		ft(*lst);
 		create_final_list(*lst, &final_list);
-		final(final_list);
+		recreate_list(final_list, input, envr);
 		open_files(*lst, &final_list);
+		final(final_list);
+		ft(*lst);
 		// check_cmd(lst, envr, input, fd);
 		// open_files(*lst);
 	}

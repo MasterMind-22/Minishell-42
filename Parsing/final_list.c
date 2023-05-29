@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   final_list.c                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: moudrib <moudrib@student.42.fr>            +#+  +:+       +#+        */
+/*   By: yonadry <yonadry@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/26 20:43:41 by moudrib           #+#    #+#             */
-/*   Updated: 2023/05/27 22:50:04 by moudrib          ###   ########.fr       */
+/*   Updated: 2023/05/29 17:39:07 by yonadry          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -103,7 +103,6 @@ char	*spaces_in_quotes_utils(char *str, int idx)
 		i++;
 	}
 	updated_str[i] = '\0';
-	free(str);
 	return (updated_str);
 }
 
