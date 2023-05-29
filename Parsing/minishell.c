@@ -6,7 +6,7 @@
 /*   By: yonadry <yonadry@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/23 13:31:57 by moudrib           #+#    #+#             */
-/*   Updated: 2023/05/21 13:23:54 by yonadry          ###   ########.fr       */
+/*   Updated: 2023/05/29 12:47:28 by yonadry          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,34 @@ void	ft(t_list *stack)
 		tmp = tmp->link;
 	}
 	printf("---------------------------------------\x1B[0m\n\n");
+}
+
+void	final(t_command *list)
+{
+	int			i;
+	t_command	*tmp;
+
+	tmp = list;
+	printf("\n\e[1m\e[93m-----------------------------------------------------------------------\n");
+	printf("|                            Final List                               |\n");
+	printf("-----------------------------------------------------------------------\n");
+	while (tmp)
+	{
+		i = 0;
+		printf("|    ---------------------------------------                          |\n");
+		printf("|    |               Command               |                          |\n");
+		printf("|    ---------------------------------------                          |\n");
+		while (tmp->cmd[i])
+		{
+			printf("|    |%37s|                          |\n", tmp->cmd[i]);
+			i++;
+		}
+		printf("|    ---------------------------------------                          |\n");
+		printf("|%29s %d                                      |\n", "fd_in:", tmp->fd_in);
+		printf("|%30s %d                                     |\n", "fd_out:", tmp->fd_out);
+		tmp = tmp->link;
+	}
+	printf("-----------------------------------------------------------------------\x1B[0m\n\n");
 }
 
 t_env	*ft_builtins(char *input, t_env **env)
@@ -52,19 +80,24 @@ t_env	*ft_copy_env_list(t_env *env)
 	return (copy);
 }
 
-/*if (ft_strlen(input) && (export_parsing(input)
-	|| check_before_value(lst, envr)))*/
 void	minihell(char *input, t_env **envr, t_list **lst)
 {
+	t_command	*final_list;
+
 	if (check_syntax(*lst))
 		return ;
 	lexer(lst);
+	final_list = NULL;
 	*envr = ft_builtins(input, envr);
 	if (lst)
 	{
 		expand_var(lst, *envr);
-		chech_cmd(lst, envr, input);
-		// ft(*lst);
+		ft(*lst);
+		create_final_list(*lst, &final_list);
+		final(final_list);
+		open_files(*lst, &final_list);
+		// check_cmd(lst, envr, input, fd);
+		// open_files(*lst);
 	}
 }
 
@@ -91,7 +124,7 @@ int	main(int ac, char **av, char **env)
 			if (lst)
 				minihell(input, &envr, &lst);
 		}
+		free(input);
 	}
-	free(input);
 	return (0);
 }

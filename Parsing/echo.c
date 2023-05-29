@@ -6,7 +6,7 @@
 /*   By: yonadry <yonadry@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/20 17:05:37 by yonadry           #+#    #+#             */
-/*   Updated: 2023/05/21 13:05:53 by yonadry          ###   ########.fr       */
+/*   Updated: 2023/05/27 14:45:00 by yonadry          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,13 +16,14 @@ t_list	*skip_n_echo(t_list *tmp, int *flag)
 {
 	while (tmp)
 	{
-		if (tmp && tmp->link && ((ft_strnstr(tmp->content, "-n", 2)
+		if (tmp && tmp->link && ((!ft_strcmp(tmp->content, "-n")
+					&& !ft_strcmp(tmp->link->content, "-n"))
+				|| ((ft_strnstr(tmp->content, "-n", 2)
 						&& ft_count_char(&tmp->content[2],
 							'n') == ft_strlen(&tmp->content[2]))
-					&& ((ft_strnstr(tmp->link->content, "-n", 2)
+					&& (ft_strnstr(tmp->link->content, "-n", 2)
 						&& ft_count_char(&tmp->link->content[2],
-							'n') == ft_strlen(&tmp->link->content[2]))
-							|| (tmp->link->content[0] && tmp->link->content[0] != ' '))))
+							'n') == ft_strlen(&tmp->link->content[2])))))
 			break ;
 		if (tmp && (!ft_strcmp(tmp->content, "-n") || (ft_strnstr(tmp->content,
 						"-n", 2) && ft_count_char(&tmp->content[2],
@@ -40,7 +41,7 @@ t_list	*skip_n_echo(t_list *tmp, int *flag)
 	return (tmp);
 }
 
-void	echo(t_list *list)
+void	echo(t_list *list, int fd)
 {
 	t_list	*tmp;
 	int		flag;
@@ -55,15 +56,17 @@ void	echo(t_list *list)
 			tmp = tmp->link;
 		while (tmp)
 		{
-			if (strstr("PIPE,HEREDOC,APPEND,OUTPUT,INPUT", tmp->type))
+			if (ft_strnstr("PIPE,HEREDOC,APPEND,OUTFILE,INFILE", tmp->type, 32)
+				|| (!ft_strcmp(" ", tmp->content)
+					&& ft_strnstr("PIPE,HEREDOC,APPEND,OUTFILE,INFILE", tmp->link->type, 32)))
 				break ;
 			if (tmp)
-				printf("%s", tmp->content);
+				ft_putstr_fd(tmp->content, fd);
 			tmp = tmp->link;
 		}
 	}
 	if (!flag && list && !ft_strcmp(list->content, "echo"))
-		printf("\n");
+		ft_putstr_fd("\n", fd);
 }
 
 char	*strlower(char *str)
@@ -80,22 +83,25 @@ char	*strlower(char *str)
 	return (str);
 }
 
-void	pwd(void)
+void	pwd(int fd)
 {
 	char	*pwd;
 
 	pwd = getcwd(NULL, 0);
 	if (pwd)
-		printf("%s\n", pwd);
+		ft_printf_fd("%s\n", fd, pwd);
+	free(pwd);
 }
 
-void	change_dir_2(t_list *list, t_env **envr)
+void	change_dir_2(t_list *list, t_env **envr, int fd)
 {
 	t_env	*env;
 	char	*pwd;
 
 	env = *envr;
 	pwd = getcwd(NULL, 0);
+	if (fd == -1)
+		fd = 2;
 	if (list && !chdir(list->content))
 	{
 		env = *envr;
@@ -110,12 +116,12 @@ void	change_dir_2(t_list *list, t_env **envr)
 	}
 	else
 	{
-		printf("minishel: cd: %s: No such file or directory\n", list->content);
+		ft_printf_fd("minishel: cd: %s: No such file or directory\n", fd, list->content);
 		return ;
 	}
 }
 
-void	change_dir(t_list *list, t_env **envr)
+void	change_dir(t_list *list, t_env **envr, int fd)
 {
 	t_env	*env;
 
@@ -134,25 +140,39 @@ void	change_dir(t_list *list, t_env **envr)
 	}
 	else if (list && list->link && list->link->link)
 		list = list->link->link;
-	change_dir_2(list, envr);
+	change_dir_2(list, envr, fd);
 }
 
-void	chech_cmd(t_list **list, t_env **envr, char *input)
+void	check_cmd(t_list **list, t_env **envr, char *input, int fd)
 {
+	t_list	*tmp;
 	t_env	*env_copy;
 
+	tmp = *list;
 	if (*list && !ft_strcmp((*list)->content, "echo"))
-		echo(*list);
+		echo(*list, fd);
 	else if (*list && !ft_strcmp((*list)->content, "cd"))
-		change_dir(*list, envr);
+		change_dir(*list, envr, fd);
+	else if (ft_strnstr(input, "exit", ft_strlen(input)))
+	{
+		while (tmp)
+		{
+			if (!ft_strcmp(tmp->content, "exit"))
+				ft_exit(list);
+			tmp = tmp->link;
+		}
+	}
 	else if (list && !strcmp("pwd", strlower((*list)->content)))
-		pwd();
+		pwd(fd);
+	else if (*list && !(*list)->prev && (*list)->link
+		&& (*list)->link->type[0] == 's' && !strcmp("unset", (*list)->content))
+		unset(list, envr);
 	if (ft_lstsize(*list) == 1 && !ft_strcmp((*list)->content, "export"))
 	{
 		env_copy = ft_copy_env_list(*envr);
 		sort_env(env_copy);
 		ft_destroy_list_env(&env_copy);
 	}
-	if (ft_strlen(input) && (check_before_value(list, envr)))
+	if (ft_strlen(input) && (export_parsing(list, envr)))
 		return ;
 }

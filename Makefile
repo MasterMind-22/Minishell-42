@@ -6,7 +6,7 @@
 #    By: yonadry <yonadry@student.42.fr>            +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/03/23 13:25:59 by moudrib           #+#    #+#              #
-#    Updated: 2023/05/20 16:41:57 by yonadry          ###   ########.fr        #
+#    Updated: 2023/05/29 12:05:42 by yonadry          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -19,13 +19,18 @@ G		= \x1B[32m
 W		= \x1B[0m
 B		= \033[1m
 SRC		=	\
+			Parsing/echo.c \
+			Parsing/ft_printf_fd.c \
+			Parsing/exit.c \
 			Parsing/input.c \
+			Parsing/unset.c \
 			Parsing/lexer.c \
 			Parsing/export.c \
 			Parsing/expand.c \
 			Parsing/parsing1.c \
 			Parsing/parsing2.c \
 			Parsing/minishell.c \
+			Parsing/final_list.c \
 			Parsing/list_utils.c \
 			Parsing/environment.c \
 			Parsing/libft_utils1.c \
@@ -34,8 +39,8 @@ SRC		=	\
 			Parsing/libft_utils4.c \
 			Parsing/export_utils1.c \
 			Parsing/export_utils2.c \
+			Parsing/open_files.c \
 			Parsing/lexer_for_export.c \
-			Parsing/echo.c \
 
 OBJ		= $(addprefix $(OBJDIR),$(SRC:.c=.o))
 
