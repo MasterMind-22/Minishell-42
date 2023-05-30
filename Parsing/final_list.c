@@ -109,13 +109,11 @@ char	*spaces_in_quotes_utils(char *str, int idx)
 void	spaces_in_quotes(t_command **final_list)
 {
 	int			i;
-	int			j;
 	t_command	*tmp;
 
 	tmp = *final_list;
 	while (tmp)
 	{
-		j = 0;
 		i = -1;
 		while (tmp->cmd[++i])
 			tmp->cmd[i] = spaces_in_quotes_utils(tmp->cmd[i], 0);

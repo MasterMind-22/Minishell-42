@@ -94,12 +94,15 @@ void	recreate_list(t_command *final_list, char *input, t_env **envr)
 			v.str = ft_strjoin(v.str, " ");
 			v.i++;
 		}
-		v.tmp1 = ft_split_input(v.str);
-		lexer(&v.tmp1);
-		check_cmd(&v.tmp1, envr, input, 0);
-		free(v.str);
-		v.str = NULL;
-		final_list = final_list->link;
+		if (v.str)
+		{
+			v.tmp1 = ft_split_input(v.str);
+			lexer(&v.tmp1);
+			check_cmd(&v.tmp1, envr, input, 0);
+			free(v.str);
+			v.str = NULL;
+			final_list = final_list->link;
+		}
 	}
 }
 
@@ -117,7 +120,7 @@ void	minihell(char *input, t_env **envr, t_list **lst)
 		expand_var(lst, *envr);
 		create_final_list(*lst, &final_list);
 		recreate_list(final_list, input, envr);
-		open_files(*lst, &final_list);
+		// open_files(*lst, &final_list);
 		final(final_list);
 		ft(*lst);
 		// check_cmd(lst, envr, input, fd);
