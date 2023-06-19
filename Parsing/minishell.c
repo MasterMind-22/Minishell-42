@@ -3,14 +3,16 @@
 /*                                                        :::      ::::::::   */
 /*   minishell.c                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: yonadry <yonadry@student.42.fr>            +#+  +:+       +#+        */
+/*   By: moudrib <moudrib@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/23 13:31:57 by moudrib           #+#    #+#             */
-/*   Updated: 2023/05/29 18:27:41 by yonadry          ###   ########.fr       */
+/*   Updated: 2023/06/18 17:30:27 by moudrib          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../minishell.h"
+
+int g_exit_status;
 
 void	ft(t_list *stack)
 {
@@ -29,11 +31,13 @@ void	ft(t_list *stack)
 	printf("---------------------------------------\x1B[0m\n\n");
 }
 
-void	final(t_command *list)
+void	final(t_cmd *list)
 {
 	int			i;
-	t_command	*tmp;
+	t_cmd	*tmp;
 
+	if (!list)
+		return ;
 	tmp = list;
 	printf("\n\e[1m\e[93m-----------------------------------------------------------------------\n");
 	printf("|                            Final List                               |\n");
@@ -44,23 +48,45 @@ void	final(t_command *list)
 		printf("|    ---------------------------------------                          |\n");
 		printf("|    |               Command               |                          |\n");
 		printf("|    ---------------------------------------                          |\n");
-		while (tmp->cmd[i])
+		while (tmp->cmd && tmp->cmd[i])
 		{
 			printf("|    |%37s|                          |\n", tmp->cmd[i]);
 			i++;
 		}
 		printf("|    ---------------------------------------                          |\n");
-		printf("|%29s %d                                      |\n", "fd_in:", tmp->fd_in);
-		printf("|%30s %d                                     |\n", "fd_out:", tmp->fd_out);
+		printf("| %25s %2d                                        |\n", "fd_in:", tmp->fd_in);
+		printf("| %25s %2d                                        |\n", "fd_out:", tmp->fd_out);
+		printf("| %25s %2s                                        |\n", "file_name:", tmp->file_name);
 		tmp = tmp->link;
 	}
 	printf("-----------------------------------------------------------------------\x1B[0m\n\n");
 }
 
-t_env	*ft_builtins(char *input, t_env **env)
+void	ft_builtins(t_list *list, t_env *envr, t_cmd *f_list, int length)
 {
-	env_parsing(input, *env);
-	return (*env);
+	t_list	*tmp;
+	t_env	*env_copy;
+
+	tmp = list;
+	if (f_list && !ft_strcmp(f_list->cmd[0], "cd"))
+		change_dir(&envr, f_list);
+	else if (list && !(list)->prev && (list)->link
+		&& (list)->link->type[0] == 's' && !strcmp("unset", (list)->content))
+		unset(&list, &envr);
+	if (!ft_strcmp(f_list->cmd[0], "export") && f_list->cmd[1] == 0)
+	{
+		env_copy = ft_copy_env_list(envr);
+		sort_env(env_copy, f_list->fd_out);
+		ft_destroy_list_env(&env_copy);
+	}
+	if (export_parsing(&list, &envr, length))
+		return ;
+	if (f_list->cmd && f_list->cmd[0] && !ft_strcmp(f_list->cmd[0], "exit"))
+		ft_exit(f_list->cmd, f_list);
+	else if (f_list->cmd && f_list->cmd[0] && !ft_strcmp(f_list->cmd[0], "env"))
+		env_parsing(f_list->cmd, envr, f_list->fd_out);
+	echo(f_list);
+	pwd(f_list, envr);
 }
 
 t_env	*ft_copy_env_list(t_env *env)
@@ -80,17 +106,21 @@ t_env	*ft_copy_env_list(t_env *env)
 	return (copy);
 }
 
-void	recreate_list(t_command *final_list, char *input, t_env **envr)
+void	recreate_list(t_cmd *final_list, t_env **envr)
 {
 	t_vars	v;
+	int		size;
 
-	v.str = NULL;
+	size = lstsize_cmd(final_list);
 	while (final_list)
 	{
 		v.i = 0;
-		while (final_list->cmd[v.i])
+		v.str = NULL;
+		while (final_list->cmd && final_list->cmd[v.i])
 		{
-			v.str = ft_strjoin(v.str, final_list->cmd[v.i]);
+			v.tmp = spaces_in_quotes_utils(final_list->cmd[v.i], 1);
+			v.str = ft_strjoin(v.str, v.tmp);
+			free(v.tmp);
 			v.str = ft_strjoin(v.str, " ");
 			v.i++;
 		}
@@ -98,33 +128,57 @@ void	recreate_list(t_command *final_list, char *input, t_env **envr)
 		{
 			v.tmp1 = ft_split_input(v.str);
 			lexer(&v.tmp1);
-			check_cmd(&v.tmp1, envr, input, 0);
+			if (size == 1)
+				check_cmd(&v.tmp1, envr, final_list);
+			ft_destroy_list(&v.tmp1);
 			free(v.str);
 			v.str = NULL;
-			final_list = final_list->link;
 		}
+		final_list = final_list->link;
 	}
+	spaces_in_quotes(&final_list);
 }
 
-void	minihell(char *input, t_env **envr, t_list **lst)
+void	minihell(t_env **envr, t_list **lst)
 {
-	t_command	*final_list;
+	t_cmd	*final_list;
 
 	if (check_syntax(*lst))
+	{
+		g_exit_status = 258;
 		return ;
+	}
 	lexer(lst);
 	final_list = NULL;
-	*envr = ft_builtins(input, envr);
 	if (lst)
 	{
-		expand_var(lst, *envr);
+		expand_var(lst, *envr, 1);
 		create_final_list(*lst, &final_list);
-		recreate_list(final_list, input, envr);
-		// open_files(*lst, &final_list);
-		final(final_list);
-		ft(*lst);
-		// check_cmd(lst, envr, input, fd);
-		// open_files(*lst);
+		open_files(*lst, final_list, envr);
+		recreate_list(final_list, envr);
+		execution(final_list, envr, lst);
+		// final(final_list);
+		// ft(*lst);
+	}
+	ft_destroy_final(&final_list);
+}
+
+void	shell_level(t_env **env)
+{
+	t_vars	v;
+	int		shlvl;
+
+	v.temp1 = *env;
+	while (v.temp1)
+	{
+		if (!ft_strcmp(v.temp1->key, "SHLVL"))
+		{
+			shlvl = (int)ft_atoi(v.temp1->value);
+			free(v.temp1->value);
+			shlvl++;
+			v.temp1->value = ft_itoa(shlvl);
+		}
+		v.temp1 = v.temp1->link;
 	}
 }
 
@@ -137,8 +191,13 @@ int	main(int ac, char **av, char **env)
 	(void)av;
 	if (ac != 1)
 		return (0);
+	lst = NULL;
 	envr = NULL;
 	envr = ft_split_environment(env);
+	shell_level(&envr);
+	signal(SIGINT, &catching_signals);
+	signal(SIGQUIT,SIG_IGN);
+	rl_catch_signals = 0;
 	while (1)
 	{
 		input = readline("➜  Minishell ");
@@ -149,9 +208,12 @@ int	main(int ac, char **av, char **env)
 			add_history(input);
 			lst = ft_split_input(input);
 			if (lst)
-				minihell(input, &envr, &lst);
+				minihell(&envr, &lst);
 		}
+		ft_destroy_list(&lst);
 		free(input);
 	}
+	ft_destroy_list_env(&envr);
+	printf("exit\n");
 	return (0);
 }

@@ -6,7 +6,7 @@
 /*   By: yonadry <yonadry@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/04 20:32:32 by yonadry           #+#    #+#             */
-/*   Updated: 2023/05/20 17:21:02 by yonadry          ###   ########.fr       */
+/*   Updated: 2023/06/16 13:51:11 by yonadry          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,26 +23,28 @@ void	switch_space(char *input, int x)
 {
 	t_vars	v;
 
-	v.i = -1;
-	while (input[++v.i] && x)
+	v.i = 0;
+	while (input[v.i] && x)
 	{
-		if (input[v.i] == '\'')
+		if (input[v.i] == '\'' && ft_strchr(&input[v.i+1], '\''))
 		{
 			while (input[++v.i] && input[v.i] != '\'')
 				if (is_space(input[v.i]))
 					input[v.i] *= -1;
 		}
-		else if (input[v.i] == '\"')
+		else if (input[v.i] == '\"' && ft_strchr(&input[v.i+1], '\"'))
 		{
 			while (input[++v.i] && input[v.i] != '\"')
 				if (is_space(input[v.i]))
 					input[v.i] *= -1;
 		}
+		v.i++;
 	}
-	while (input[++v.i] && !x)
+	while (input[v.i] && !x)
 	{
 		if (input[v.i] < 0)
 			input[v.i] *= -1;
+		v.i++;
 	}
 }
 
@@ -55,7 +57,7 @@ char	is_quote(char input)
 
 char	is_special(char c)
 {
-	if (check_char("()=+|><$", c))
+	if (check_char("()=+|><$?", c))
 		return (c);
 	return (0);
 }
@@ -87,7 +89,8 @@ void	handle_quotes(t_vars *v, t_list **lst, char c)
 				v->j++;
 			ft_lstadd_back(lst, ft_lstnew(ft_substr(v->arr[v->i], v->start, v->j
 						- v->start + 1)));
-			v->j++;
+			if (v->arr[v->i][v->j])
+				v->j++;
 		}
 		else if (v->arr[v->i][v->j] && !is_quote(v->arr[v->i][v->j]))
 		{
